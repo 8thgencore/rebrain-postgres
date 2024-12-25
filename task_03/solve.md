@@ -13,22 +13,22 @@ sudo apt install postgresql
 > ```
 
 2. Добавьте в PostgreSQL пользователя root c правами SUPERUSER.
-```postgres
+```sql
 CREATE ROLE root WITH SUPERUSER LOGIN PASSWORD 'password';
 ```
 
 3. Создайте базу данных "rebrain_courses_db".
-```postgres
+```sql
 CREATE DATABASE rebrain_courses_db;
 ```
 
 4. Для работы с базой данных создайте пользователя "rebrain_admin".
-```postgres
+```sql
 CREATE ROLE rebrain_admin WITH LOGIN PASSWORD 'admin_password';
 ```
 
 5. Выдайте все права пользователю "rebrain_admin" на базу данных "rebrain_courses_db".
-```postgres
+```sql
 GRANT ALL PRIVILEGES ON DATABASE rebrain_courses_db TO rebrain_admin;
 ```
 
@@ -48,12 +48,12 @@ psql -U root -d rebrain_courses_db
 ```
 
 9. Проверьте наличие данных в таблицах, чтобы понять, что бекап данных прошел успешно.
-```postgres
+```sql
 \dt -- показать список таблиц
 SELECT * FROM table_name LIMIT 5; -- проверить данные
 ```
 10. Посчитайте общую стоимость практикумов компании REBRAIN из таблицы courses с помощью оконной функции sum(price) OVER (), результат сохраните в файл /tmp/answers/devops_old_price (используйте запрос SELECT * FROM ...).
-```postgres
+```sql
 COPY (
     SELECT SUM(price) AS total_price
     FROM courses
@@ -77,12 +77,12 @@ course_id,coursename,tasks_count,price,total_price
 ```
 
 11. Обновите данные цены практикума в таблице №2 для практикума "Devops". Новая цена: 100000 руб.
-```postgres
+```sql
 UPDATE courses SET price = 100000 WHERE name = 'Devops';
 ```
 
 12. Посчитайте общую стоимость практикумов компании REBRAIN из обновленной таблицы courses с помощью оконной функции sum(price) OVER (ORDER BY price), результат сохраните в файл /tmp/answers/devops_new_price (используйте запрос SELECT * FROM ...).
-```postgres
+```sql
 COPY (
     SELECT SUM(price) AS total_price
     FROM courses
@@ -110,7 +110,7 @@ course_id,coursename,tasks_count,price,total_price
 * user_id (id пользователя, который был создан)
 * creation_time (время создания записи о новом пользователе)
 * creator (имя пользователя базы данных, с помощью которого производился insert)
-```postgres
+```sql
 CREATE TABLE auditlog (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
@@ -119,7 +119,7 @@ CREATE TABLE auditlog (
 );
 ```
 14. Создайте функцию c именем "fnc_auditlog_users_insert", которая логирует в таблицу (записывает в таблицу) auditlog информацию о регистрации нового пользователя на сайте компании REBRAIN.
-```postgres
+```sql
 CREATE OR REPLACE FUNCTION fnc_auditlog_users_insert() RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO auditlog (user_id, creator)
@@ -130,7 +130,7 @@ $$ LANGUAGE plpgsql;
 ```
 
 15. Создайте и установите триггер "insert_into_users_trigger" на INSERT данных в таблицу users так, чтобы вызывалась функция c именем "fnc_auditlog_users_insert", которую вы создали выше.
-```postgres
+```sql
 CREATE TRIGGER insert_into_users_trigger
 AFTER INSERT ON users
 FOR EACH ROW
@@ -138,7 +138,7 @@ EXECUTE FUNCTION fnc_auditlog_users_insert();
 ```
 
 16. С помощью команды INSERT, добавьте в таблицу "users" 15 новых пользователей. Для каждого нового пользователя делайте отдельный запрос, так чтобы срабатывал установленный триггер.
-```postgres
+```sql
 INSERT INTO users (username, email, mobile_phone, firstname, lastname, city, is_curator, record_date) VALUES
 ('user1', 'user1@example.com', '1234567890', 'John', 'Doe', 'New York', true, NOW()),
 ('user2', 'user2@example.com', '0987654321', 'Jane', 'Smith', 'Los Angeles', false, NOW()),
@@ -158,7 +158,7 @@ INSERT INTO users (username, email, mobile_phone, firstname, lastname, city, is_
 ```
 
 17. Создайте представление c именем "get_last_10_records_from_auditlog", которое позволит вывести из таблицы auditlog последних 10 попыток записи в таблицу users за последний день с сортировкой по времени (select * from auditlog limit 10 сортировка по времени).
-```postgres
+```sql
 CREATE OR REPLACE VIEW get_last_10_records_from_auditlog AS
 SELECT * FROM auditlog
 WHERE creation_time >= NOW() - INTERVAL '1 day'
