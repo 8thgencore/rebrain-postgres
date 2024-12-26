@@ -1,4 +1,4 @@
-# Задание 3
+# Блок 04: Advanced SQL
 
 1. Установите из официального репозитория postgresql на VM c OS Ubuntu (sources.list уже настроен, добавлять репозитории не нужно).
 ```bash
@@ -6,30 +6,28 @@ sudo apt update
 sudo apt install postgresql
 ```
 
-> P.S. Для запуска psql
-> ```bash
-> sudo -i -u postgres
-> psql
-> ```
-
-2. Добавьте в PostgreSQL пользователя root c правами SUPERUSER.
+2. Добавьте в PostgreSQL пользователя `root` c правами **SUPERUSER**.
+```bash
+sudo -i -u postgres
+psql
+```
 ```sql
 CREATE ROLE root WITH SUPERUSER LOGIN PASSWORD 'password';
 ```
 
-3. Создайте базу данных "rebrain_courses_db".
+3. Подключитесь к PostgreSQL пользователем `root` с помощью команды: `psql -U root -d postgres`
+```bash
+psql -U root -d postgres
+```
+
+4. Создайте базу данных `rebrain_courses_db`.
 ```sql
 CREATE DATABASE rebrain_courses_db;
 ```
 
-4. Для работы с базой данных создайте пользователя "rebrain_admin".
+5. Для работы с базой данных создайте пользователя `rebrain_admin`.
 ```sql
 CREATE ROLE rebrain_admin WITH LOGIN PASSWORD 'admin_password';
-```
-
-5. Выдайте все права пользователю "rebrain_admin" на базу данных "rebrain_courses_db".
-```sql
-GRANT ALL PRIVILEGES ON DATABASE rebrain_courses_db TO rebrain_admin;
 ```
 
 6. Переместите файл бэкапа базы данных "rebrain_courses_db" из предыдущего задания на сервер и положите в директорию /tmp/ с именем rebrain_courses_db.sql.bqp.
@@ -54,14 +52,14 @@ SELECT * FROM table_name LIMIT 5; -- проверить данные
 ```
 10. Посчитайте общую стоимость практикумов компании REBRAIN из таблицы courses с помощью оконной функции sum(price) OVER (), результат сохраните в файл /tmp/answers/devops_old_price (используйте запрос SELECT * FROM ...).
 ```sql
-COPY (
+\copy (
     SELECT SUM(price) AS total_price
     FROM courses
 ) TO '/tmp/answers/devops_old_price' WITH CSV HEADER;
 ```
 
 
-```bash
+```console
 $ cat devops_new_price
 
 course_id,coursename,tasks_count,price,total_price
@@ -83,13 +81,13 @@ UPDATE courses SET price = 100000 WHERE name = 'Devops';
 
 12. Посчитайте общую стоимость практикумов компании REBRAIN из обновленной таблицы courses с помощью оконной функции sum(price) OVER (ORDER BY price), результат сохраните в файл /tmp/answers/devops_new_price (используйте запрос SELECT * FROM ...).
 ```sql
-COPY (
+\copy (
     SELECT SUM(price) AS total_price
     FROM courses
 ) TO '/tmp/answers/devops_new_price' WITH CSV HEADER;
 ```
 
-```bash
+```console
 $ cat devops_old_price
 
 course_id,coursename,tasks_count,price,total_price
