@@ -1,4 +1,4 @@
-# Блок 03: Basic SQL
+# Блок 02: Basic SQL
 
 1. Установите 14-ую версию PostgreSQL из официального репозитория postgresql на VM с OS Ubuntu (sources.list уже настроен, добавлять репозитории не нужно).
 ```bash

@@ -1,4 +1,4 @@
-# Блок 04: Advanced SQL
+# Блок 03: Advanced SQL
 
 1. Установите из официального репозитория postgresql на VM c OS Ubuntu (sources.list уже настроен, добавлять репозитории не нужно).
 ```bash
