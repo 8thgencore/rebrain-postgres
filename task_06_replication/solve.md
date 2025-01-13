@@ -51,7 +51,8 @@ sudo nano /var/lib/pgsql/13/data/postgresql.conf
 listen_addresses = '*'
 wal_level = replica
 max_wal_senders = 2
-wal_keep_size = 32MB  # В PostgreSQL 13 заменяет wal_keep_segments
+max_replication_slots = 1 
+wal_keep_size = 100
 archive_mode = on
 hot_standby = on
 logging_collector = on
@@ -133,17 +134,9 @@ sudo wget https://files.rebrainme.com/workshops/postgresql/task06/data.sql
 # Установка прав
 sudo chown postgres:postgres /opt/*.sql
 
-# Временно отключаем синхронную репликацию
-sudo -u postgres psql -c "ALTER SYSTEM SET synchronous_standby_names TO '';"
-sudo systemctl restart postgresql-13
-
 # Восстановление
 sudo -u postgres psql -f /opt/schema.sql
 sudo -u postgres psql -f /opt/data.sql
-
-# Возвращаем синхронную репликацию
-sudo -u postgres psql -c "ALTER SYSTEM SET synchronous_standby_names TO 'slave';"
-sudo systemctl restart postgresql-13
 ```
 
 ## 7. Проверка репликации
