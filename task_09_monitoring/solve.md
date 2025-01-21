@@ -54,25 +54,8 @@ sudo cp prometheus-2.55.1.linux-amd64/prometheus /usr/local/bin/
 sudo cp prometheus-2.55.1.linux-amd64/promtool /usr/local/bin/
 sudo chown prometheus:prometheus /usr/local/bin/prometheus
 sudo chown prometheus:prometheus /usr/local/bin/promtool
-```
 
-Настройка конфигурации для self-monitoring
-```bash
-sudo nano /etc/prometheus/prometheus.yml
-```
-
-```yaml
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-```
-
-Создание systemd сервиса
-```bash
+# Создание systemd сервиса
 sudo tee /etc/systemd/system/prometheus.service << EOF
 [Unit]
 Description=Prometheus
@@ -101,6 +84,25 @@ sudo systemctl enable prometheus
 # Проверка статуса и порта
 sudo systemctl status prometheus
 ss -tunlp | grep 9090
+```
+
+Настройка конфигурации для self-monitoring
+```bash
+sudo nano /etc/prometheus/prometheus.yml
+```
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+```
+
+```bash
+sudo systemctl restart prometheus
 ```
 
 ## 8. Установка node_exporter
@@ -274,6 +276,9 @@ sudo systemctl restart prometheus-postgres-exporter
 ## 19. Инициализация pgbench
 ```bash
 sudo apt install -y postgresql-client-common postgresql-client-13
+```
+
+```bash
 pgbench -i -U rebrain_monitoring -h localhost -d rebrain_courses_db
 ```
 
