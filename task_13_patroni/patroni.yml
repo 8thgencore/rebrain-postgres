@@ -1,0 +1,84 @@
+scope: rebrain
+namespace: /rebrain-cluster/
+name: rebrain-postgres-node-1
+
+restapi:
+  listen: pg-node-1:8008
+  connect_address: pg-node-1:8008
+
+etcd:
+  hosts:
+  - etcd-node-1:2379
+  - etcd-node-2:2379
+  - etcd-node-3:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_keep_segments: 8
+        max_wal_senders: 5
+        max_replication_slots: 5
+        wal_log_hints: "on"
+        archive_mode: "on"
+        archive_timeout: 600s
+        archive_command: mkdir -p ../wal_archive && test ! -f ../wal_archive/%f && cp %p ../wal_archive/%f
+      recovery_conf:
+        restore_command: cp ../wal_archive/%f %p
+
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+
+  pg_hba:
+  - host all root 0.0.0.0/0 md5
+  - host replication replicator ::1/128 md5
+  - host replication replicator 127.0.0.1/8 md5
+  - host replication replicator pg-node-1/24 md5
+  - host replication replicator pg-node-2/24 md5
+  - host replication replicator pg-node-3/24 md5
+
+  users:
+    rebrain_admin:
+      password: rebrain_admin_password
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: pg-node-1:5432
+  connect_address: pg-node-1:5432
+  data_dir: /etc/patroni/pgdata
+  bin_dir: /usr/lib/postgresql/13/bin
+  pgpass: /tmp/pgpass0
+  authentication:
+    superuser:
+      username: root
+      password: admin
+    replication:
+      username: replicator
+      password: replicatorSuperHarDpwd
+    rewind:
+      username: rewind_user
+      password: rewind_password
+  parameters:
+    unix_socket_directories: '.'
+    external_pid_file: '/var/run/postgresql/13-main.pid'
+
+logging_collector: "on"
+log_directory: "/var/log/postgresql"
+log_filename: "postgresql-13-main.log"
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
