@@ -6,7 +6,7 @@ After=network.target
 [Service] 
 User=etcd 
 Type=notify 
-ExecStart=/task13/etcd/etcd --config-file /etc/etcd/etcd.yml
+ExecStart=etcd --config-file /etc/etcd/etcd.yml
 Restart=always
 RestartSec=10s 
 LimitNOFILE=40000 

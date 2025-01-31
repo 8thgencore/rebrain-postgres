@@ -30,17 +30,17 @@ hostnamectl set-hostname haproxy --static
 ```bash
 tee -a /etc/hosts << EOF
 # PostgreSQL nodes
-192.168.1.11 pg-node-1
-192.168.1.12 pg-node-2
-192.168.1.13 pg-node-3
+10.129.0.11 pg-node-1
+10.129.0.12 pg-node-2
+10.129.0.13 pg-node-3
 
 # ETCD nodes
-192.168.1.21 etcd-node-1
-192.168.1.22 etcd-node-2
-192.168.1.23 etcd-node-3
+10.129.0.21 etcd-node-1
+10.129.0.22 etcd-node-2
+10.129.0.23 etcd-node-3
 
 # HAProxy
-192.168.1.30 haproxy
+10.129.0.30 haproxy
 EOF
 ```
 
@@ -83,9 +83,6 @@ cp /task13/etcd/etcd* /usr/local/bin
 # Создание конфигурационного файла для etcd-1 (аналогично для etcd-2 и etcd-3)
 mkdir -p /etc/etcd
 nano /etc/etcd/etcd.yml
-
-# Замена IP адресов в файле etcd.yml
-sed -i 's/etcd-node-1/10.129.0.34/g; s/etcd-node-2/10.129.0.35/g; s/etcd-node-3/10.129.0.36/g' /etc/etcd/etcd.yml
 ```
 
 ## 3. Настройка пользователя и сервиса ETCD
@@ -99,7 +96,21 @@ chown -R etcd:etcd /etc/etcd/
 
 # Создание systemd сервиса
 tee -a /etc/systemd/system/etcd.service << EOF
-# TODO: содержимое файла etcd.service
+[Unit] 
+Description=etcd key-value store 
+Documentation=https://github.com/coreos/etcd 
+After=network.target 
+ 
+[Service] 
+User=etcd 
+Type=notify 
+ExecStart=etcd --config-file /etc/etcd/etcd.yml
+Restart=always
+RestartSec=10s 
+LimitNOFILE=40000 
+
+[Install] 
+WantedBy=multi-user.target
 EOF
 
 # Запуск сервиса
@@ -112,9 +123,9 @@ systemctl start etcd
 
 ```bash
 # Проверка статуса кластера
-/task13/etcd/etcdctl endpoint status --write-out=table
-/task13/etcd/etcdctl endpoint health --write-out=table
-/task13/etcd/etcdctl member list --write-out=table
+etcdctl endpoint status --write-out=table
+etcdctl endpoint health --write-out=table
+etcdctl member list --write-out=table
 ```
 
 ## 5. Установка PostgreSQL 13 на серверах patroni-1, patroni-2, patroni-3
@@ -130,6 +141,12 @@ sudo apt install -y postgresql-13
 
 # Остановка PostgreSQL если запущен
 sudo systemctl stop postgresql@13-main
+
+# Создание дирректори pgpass и настройка прав
+mkdir -p /var/lib/postgresql
+touch /var/lib/postgresql/pgpass
+chown postgres:postgres /var/lib/postgresql/pgpass
+chmod 600 /var/lib/postgresql/pgpass
 ```
 
 ## 6. Установка зависимостей Patroni
@@ -137,7 +154,7 @@ sudo systemctl stop postgresql@13-main
 ```bash
 # Установка зависимостей
 sudo apt install -y python3-pip python3-dev libpq-dev gcc
-pip3 install --upgrade setuptools pip
+pip3 install --upgrade pip
 pip3 install psycopg2-binary
 ```
 
@@ -151,12 +168,7 @@ pip3 install patroni[etcd]
 mkdir -p /task13/patroni /etc/patroni
 
 # Создание конфигурации Patroni
-cat > /etc/patroni/patroni.yml << EOF
-# TODO: содержимое файла patroni.yml
-EOF
-
-# Копирование patroni в /usr/local/bin
-sudo cp $(which patroni) /usr/local/bin/
+nano /etc/patroni/patroni.yml
 ```
 
 ## 8. Настройка сервиса Patroni
@@ -168,7 +180,20 @@ chown -R postgres:postgres /etc/patroni/
 
 # Создание systemd сервиса
 cat > /etc/systemd/system/patroni.service << EOF
-# TODO: содержимое файла patroni.service
+[Unit]
+Description=Patroni needs to orchestrate a high-availability PostgreSQL
+Documentation=https://patroni.readthedocs.io/en/latest/
+After=syslog.target network.target
+
+[Service]
+User=postgres
+Group=postgres
+Type=simple
+ExecStart=patroni /etc/patroni/patroni.yml
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
 # Запуск сервиса
@@ -190,6 +215,10 @@ patronictl -c /etc/patroni/patroni.yml list
 sudo -u postgres psql -d postgres << EOF
 CREATE TABLE test (id SERIAL Primary Key NOT NULL, info TEXT);
 INSERT INTO test (info) VALUES ('Hello'),('From'),('Patroni'),('Leader');
+EOF
+
+sudo -u postgres psql  -h localhost -d postgres << EOF
+DROP TABLE test;
 EOF
 
 # Проверка репликации на реплике
