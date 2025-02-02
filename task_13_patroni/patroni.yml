@@ -3,7 +3,7 @@ namespace: /rebrain-cluster/
 name: rebrain-postgres-node-1
 
 restapi:
-  listen: pg-node-1:8008
+  listen: 0.0.0.0:8008
   connect_address: pg-node-1:8008
 
 etcd:
@@ -55,7 +55,7 @@ bootstrap:
         - createdb
 
 postgresql:
-  listen: pg-node-1:5432
+  listen: 0.0.0.0:5432
   connect_address: pg-node-1:5432
   data_dir: /etc/patroni/pgdata
   bin_dir: /usr/lib/postgresql/13/bin
@@ -70,6 +70,9 @@ postgresql:
     rewind:
       username: rewind_user
       password: rewind_password
+    rebrain_admin:
+      username: rebrain_admin
+      password: rebrain_password
   parameters:
     unix_socket_directories: '.'
     external_pid_file: '/var/run/postgresql/13-main.pid'

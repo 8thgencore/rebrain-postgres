@@ -141,6 +141,7 @@ sudo apt install -y postgresql-13
 
 # Остановка PostgreSQL если запущен
 sudo systemctl stop postgresql@13-main
+sudo systemctl disable postgresql
 
 # Создание дирректори pgpass и настройка прав
 mkdir -p /var/lib/postgresql
@@ -205,24 +206,17 @@ systemctl start patroni
 ## 9. Проверка работы кластера PostgreSQL
 
 ```bash
-# Запуск PostgreSQL
-sudo systemctl start postgresql
-
 # Проверка статуса кластера
 patronictl -c /etc/patroni/patroni.yml list
 
 # Создание тестовой таблицы на лидере
-sudo -u postgres psql -d postgres << EOF
+psql -h localhost -d postgres << EOF
 CREATE TABLE test (id SERIAL Primary Key NOT NULL, info TEXT);
 INSERT INTO test (info) VALUES ('Hello'),('From'),('Patroni'),('Leader');
 EOF
 
-sudo -u postgres psql  -h localhost -d postgres << EOF
-DROP TABLE test;
-EOF
-
 # Проверка репликации на реплике
-sudo -u postgres psql -d postgres -c "SELECT * FROM test;"
+psql -h localhost -d postgres -c "SELECT * FROM test;"
 ```
 
 ## 10. Установка и настройка HAProxy
@@ -238,14 +232,14 @@ EOF
 
 # Запуск HAProxy
 systemctl enable haproxy
-systemctl start haproxy
+systemctl restart haproxy
 ```
 
 ## 11. Проверка работы HAProxy
 
 ```bash
 # Проверка подключения через HAProxy
-psql -h 10.129.0.11 -d postgres -U root -W -c "select inet_server_addr();"
+psql -h haproxy -d postgres -U root -W -c "select inet_server_addr();"
 ```
 
 ## 12. Тестирование отказоустойчивости
@@ -258,7 +252,10 @@ systemctl stop patroni
 patronictl -c /etc/patroni/patroni.yml list
 
 # Проверка нового лидера
-psql -h haproxy -p 5432 -d postgres -U root -W -c "select inet_server_addr();"
+psql -h haproxy -d postgres -U root -W -c "select inet_server_addr();"
+
+# Восстановление лидера
+systemctl start patroni
 ```
 
 ## Дополнительные проверки
