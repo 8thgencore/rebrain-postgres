@@ -1,0 +1,15 @@
+[Unit] 
+Description=etcd key-value store 
+Documentation=https://github.com/coreos/etcd 
+After=network.target 
+ 
+[Service] 
+User=etcd 
+Type=notify 
+ExecStart=etcd --config-file /etc/etcd/etcd.yml
+Restart=always
+RestartSec=10s 
+LimitNOFILE=40000 
+
+[Install] 
+WantedBy=multi-user.target

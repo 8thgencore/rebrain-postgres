@@ -1,0 +1,132 @@
+scope: postgres
+namespace: /db/
+name: pg-node-1  # Изменить для каждой ноды
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: pg-node-1:8008  # Изменить для каждой ноды
+
+etcd:
+  hosts:
+    - etcd-node-1:2379
+    - etcd-node-2:2379
+    - etcd-node-3:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    
+    # Настройка синхронной репликации
+    synchronous_mode: true
+    synchronous_mode_strict: false
+    synchronous_node_count: 1
+    
+    # Настройка failover
+    master_start_timeout: 180  # 3 минуты ожидания поднятия старого мастера
+    
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_keep_segments: 8
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_log_hints: "on"
+        archive_mode: "on"
+        archive_timeout: 600s
+        archive_command: mkdir -p ../wal_archive && test ! -f ../wal_archive/%f && cp %p ../wal_archive/%f
+        synchronous_commit: 'on'
+        synchronous_standby_names: 'FIRST 1 (*)'  # Любая первая реплика с наивысшим приоритетом
+        max_connections: 2500
+        shared_buffers: '2GB'
+        work_mem: '32MB'
+        maintenance_work_mem: '256MB'
+      recovery_conf:
+        restore_command: cp ../wal_archive/%f %p
+
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+
+  pg_hba:
+    - host all rebrain_admin 0.0.0.0/0 md5
+    - host all rewind_user 10.129.0.0/24 md5
+    - host replication replicator ::1/128 md5
+    - host replication replicator 127.0.0.1/8 md5
+    - host replication replicator pg-node-1/24 md5
+    - host replication replicator pg-node-2/24 md5
+    - host replication replicator pg-node-3/24 md5
+    - host replication replicator pg-node-4/24 md5
+
+  users:
+    rebrain_admin:
+      password: rebrain_admin_password
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: pg-node-1:5432  # Изменить для каждой ноды
+  data_dir: /task/patroni/pgdata
+  bin_dir: /usr/lib/postgresql/14/bin
+  pgpass: /var/lib/postgresql/pgpass
+  authentication:
+    superuser:
+      username: postgres
+      password: postgres_password
+    replication:
+      username: replicator
+      password: replicator_password
+    rewind:
+      username: rewind_user
+      password: rewind_password
+    rebrain_admin:
+      username: rebrain_admin
+      password: rebrain_admin_password
+  parameters:
+    unix_socket_directories: '.'
+    external_pid_file: '/var/run/postgresql/14-main.pid'
+
+logging_collector: "on"
+log_directory: "/var/log/postgresql"
+log_filename: "postgresql-14-main.log"
+
+# Теги для разных нод:
+
+# Для pg-node-1 (Leader):
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false
+    priority: 100
+
+# Для pg-node-2 (Sync replica):
+#tags:
+#    nofailover: false
+#    noloadbalance: false
+#    clonefrom: false
+#    nosync: false
+#    priority: 90
+
+# Для pg-node-3 (Async replica):
+#tags:
+#    nofailover: false
+#    noloadbalance: false
+#    clonefrom: false
+#    nosync: true
+#    priority: 50
+
+# Для pg-node-4 (Reserved replica):
+#tags:
+#    nofailover: false
+#    noloadbalance: true
+#    clonefrom: false
+#    nosync: true
+#    priority: 30 

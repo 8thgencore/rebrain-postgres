@@ -275,7 +275,7 @@ sudo systemctl restart prometheus-postgres-exporter
 
 ## 19. Инициализация pgbench
 ```bash
-sudo apt install -y postgresql-client-common postgresql-client-13
+sudo apt install -y postgresql-client-common postgresql-client-13 postgresql-contrib
 ```
 
 ```bash
