@@ -140,10 +140,10 @@ sudo apt update
 sudo apt install -y postgresql-13
 
 # Остановка PostgreSQL если запущен
-sudo systemctl stop postgresql@13-main
+sudo systemctl stop postgresql
 sudo systemctl disable postgresql
 
-# Создание дирректори pgpass и настройка прав
+# Создание директории pgpass и настройка прав
 mkdir -p /var/lib/postgresql
 touch /var/lib/postgresql/pgpass
 chown postgres:postgres /var/lib/postgresql/pgpass
@@ -154,7 +154,7 @@ chmod 600 /var/lib/postgresql/pgpass
 
 ```bash
 # Установка зависимостей
-sudo apt install -y python3-pip python3-dev libpq-dev gcc
+sudo apt install -y python3-pip python3-dev libpq-dev
 pip3 install --upgrade pip
 pip3 install psycopg2-binary
 ```
@@ -190,7 +190,7 @@ After=syslog.target network.target
 User=postgres
 Group=postgres
 Type=simple
-ExecStart=patroni /etc/patroni/patroni.yml
+ExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml
 Restart=no
 
 [Install]
@@ -200,7 +200,7 @@ EOF
 # Запуск сервиса
 systemctl daemon-reload
 systemctl enable patroni
-systemctl start patroni
+systemctl restart patroni
 ```
 
 ## 9. Проверка работы кластера PostgreSQL
